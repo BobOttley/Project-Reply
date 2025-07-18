@@ -1,0 +1,11 @@
+{
+  "fields": [
+    "parent_name",
+    "parent_email",
+    "child_name",
+    "child_year_group",
+    "interests",
+    "additional_comments"
+  ],
+  "prompt_instructions": "Please extract these fields accurately. If a field is not present, return an empty string."
+}

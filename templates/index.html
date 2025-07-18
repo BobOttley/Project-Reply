@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SMART Reply | Smart Admissions Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/styles.css" />
+  <style>
+    :root {
+      --brand-blue: #003366;
+    }
+    body {
+      background: #f4f7fa;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 7px 38px rgba(0,44,102,0.08);
+      padding: 0 0 36px 0;
+    }
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 36px 44px 0 44px;
+      background: none;
+    }
+    .header-bar h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.1em;
+      color: var(--brand-blue);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .branding img {
+      height: 28px;
+      margin-left: 6px;
+      opacity: 0.87;
+      vertical-align: middle;
+    }
+
+    /* Browser-style tabs */
+    .browser-tabs {
+      display: flex;
+      align-items: flex-end;
+      gap: 0;
+      margin: 38px 0 0 44px;
+      /* margin-top pushes tabs below header */
+    }
+    .browser-tab {
+      font-family: inherit;
+      background: #dde4ef;
+      color: var(--brand-blue);
+      border: 1.5px solid #dde4ef;
+      border-bottom: none;
+      border-radius: 11px 11px 0 0;
+      font-size: 1.18em;
+      padding: 17px 48px 14px 44px;
+      margin-right: -8px;
+      position: relative;
+      top: 8px;
+      cursor: pointer;
+      z-index: 2;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,51,102,0.05);
+      transition: background .2s, color .2s, z-index .08s;
+      outline: none;
+    }
+    .browser-tab.active {
+      background: #fff;
+      color: var(--brand-blue);
+      border: 2px solid #d3dbec;
+      border-bottom: 2px solid #fff;
+      z-index: 3;
+      font-weight: 700;
+      box-shadow: 0 8px 26px rgba(0,51,102,0.11);
+    }
+    .browser-page {
+      background: #fff;
+      border-radius: 0 0 18px 18px;
+      box-shadow: 0 8px 32px rgba(0,51,102,0.10);
+      margin: 0 38px 2.5rem 38px;
+      position: relative;
+      top: -1px;
+      padding-top: 3.5rem;
+    }
+
+    /* Inbox panels and cards */
+    .inbox-main {
+      display: flex;
+      gap: 2.3rem;
+      min-height: 480px;
+      background: #f5f7fa;
+      padding: 2.3rem 2.7rem 2.7rem 2.7rem;
+      border-radius: 0 0 18px 18px;
+    }
+    .inbox-list {
+      flex: 1.1;
+      max-width: 370px;
+      background: #f7fafd;
+      border-radius: 13px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow-y: auto;
+      padding: 1.6rem 1.1rem;
+      min-width: 240px;
+      border: 1.5px solid #e0e7ef;
+    }
+    .inbox-card {
+      background: #fff;
+      border-radius: 9px;
+      margin-bottom: 1.22rem;
+      padding: 1.2rem 1.4rem 1rem 1.25rem;
+      cursor: pointer;
+      border: 2px solid #e0e7ef;
+      transition: border .14s, box-shadow .13s;
+      box-shadow: 0 2px 8px rgba(0,44,102,0.08);
+      position: relative;
+    }
+    .inbox-card.active,
+    .inbox-card:hover {
+      border: 2.2px solid var(--brand-blue);
+      box-shadow: 0 8px 20px rgba(0,44,102,0.13);
+      background: #f3f6fd;
+    }
+    .email-subject { font-size: 1.09em; font-weight: 600; color: var(--brand-blue); letter-spacing: .01em; }
+    .email-from { color: #375; font-size: .99em; }
+    .email-date { color: #9aa7c2; font-size: .91em; float: right; }
+    .email-preview { font-size: 0.98em; color: #444; margin: 7px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .inbox-detail {
+      flex: 2.2;
+      background: #f7fafd;
+      border-radius: 13px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 2.6rem 2.2rem 2.3rem 2.3rem;
+      min-width: 390px;
+      min-height: 350px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      border: 1.5px solid #e0e7ef;
+    }
+    .inbox-detail-empty {
+      color:#a0aabe;
+      text-align:center;
+      font-size:1.14em;
+      padding: 7em 0;
+    }
+    .reply-box { margin-top: 2.3rem; }
+    @media (max-width: 1020px) {
+      .container { max-width: 99vw; }
+      .header-bar, .browser-tabs, .browser-page { margin-left: 0; margin-right: 0; }
+      .browser-page { padding-top: 1.2rem; }
+      .inbox-main { flex-direction: column; padding: 1.2rem .7rem; }
+      .inbox-list, .inbox-detail { max-width: none; min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <!-- === Header Branding === -->
+    <div class="header-bar">
+      <h1>SMART Reply</h1>
+      <div class="branding" style="font-size: 0.9rem; color: #555;">
+        Powered by
+        <img src="https://more-house-school.s3.eu-west-2.amazonaws.com/CT__300dpi_primary_full.jpg"
+             alt="Cognitive Tasking" height="28">
+      </div>
+    </div>
+    <!-- === Browser-style Tabs === -->
+    <div class="browser-tabs">
+      <button id="tab-inbox" class="browser-tab active">Smart Reply Inbox</button>
+      <button id="tab-reply" class="browser-tab">Smart Reply</button>
+    </div>
+    <!-- === INBOX PAGE === -->
+    <div id="tab-inbox-content" class="browser-page" style="display:block;">
+      <div class="inbox-main">
+        <!-- Left: Email List -->
+        <div class="inbox-list" id="inbox-list"></div>
+        <!-- Right: Email Details + Actions -->
+        <div class="inbox-detail" id="inbox-detail">
+          <div class="inbox-detail-empty">Select an email to view details.</div>
+        </div>
+      </div>
+    </div>
+    <!-- === SMART REPLY PAGE === -->
+    <div id="tab-reply-content" class="browser-page smart-reply-panel" style="display:none;">
+      <div class="inbox-detail">
+        <p class="subtext">
+          Paste a parent email below — SMART Reply will write a professional reply using the School’s official information.
+        </p>
+        <label for="parentMessage">Parent Email:</label>
+        <textarea id="parentMessage" placeholder="E.g. Do you offer wrap-around care or bursaries for siblings?"></textarea>
+        <label for="instructionBox">Optional Instruction:</label>
+        <div class="field-desc">
+          Add any special tone or style instructions (e.g. "Make it warmer", "Be concise").
+        </div>
+        <textarea id="instructionBox"></textarea>
+        <div class="buttons-row">
+          <button id="submitBtn">Generate Reply</button>
+          <button id="clearBtn">Clear Text</button>
+          <span id="loading" class="loader" style="display:none;" aria-live="polite"></span>
+        </div>
+        <div id="sentimentBox" class="sentiment-box" aria-live="polite"></div>
+        <div id="replyBox" class="reply-box" aria-live="polite"></div>
+        <div id="errorBox" class="error-box" role="alert"></div>
+        <div id="reviseSection" class="revise-section">
+          <label for="reviseBox">Refine this reply with an instruction:</label>
+          <textarea id="reviseBox" placeholder="E.g. Shorten, remove bursary link …"></textarea>
+          <label for="urlBox" style="margin-top:1rem;display:block;">💡 Add Smart Links to Your Replies</label>
+          <div class="field-desc" style="margin-bottom:.4rem;">
+            Automatically turn important phrases (like <em>Head</em> or <em>Visit Us</em>) into clickable links.<br><br>
+            <strong>How it works:</strong><br>
+            Just type each phrase and the webpage you want it to link to.<br>
+            Use this format:<br>
+            <code>Head=https://site.com/head; Visit Us=https://site.com/visit</code><br><br>
+            👉 Separate each pair with a semicolon (<code>;</code>)
+          </div>
+          <textarea id="urlBox" style="width:100%;padding:0.6rem;height:80px;margin-bottom:1rem;" placeholder="E.g. Head=https://..., Visit Us=https://..."></textarea>
+          <div class="buttons-row">
+            <button id="reviseBtn">Revise Response</button>
+            <button id="saveBtn">Save as Standard</button>
+            <span id="saveStatus" style="color: #47B881; font-weight: 600;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- === End Main Container === -->
+
+ 
+  <script src="static/script.js"></script>
+</body>
+</html>
