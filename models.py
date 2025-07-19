@@ -1,3 +1,6 @@
+import os
+print("DEBUG: DATABASE_URL is", os.environ.get("DATABASE_URL"))
+
 from sqlalchemy import (
     create_engine, Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint, Index, Boolean
 )
