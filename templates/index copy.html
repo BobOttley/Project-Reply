@@ -1,84 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>SMART Reply | Smart Admissions Assistant</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="static/styles.css" />
+  <style>
+    .tab-btn { padding: 12px 22px; border: none; background: #f0f3f9; cursor: pointer; font-size: 1.1em; }
+    .tab-btn.active { background: #fff; border-bottom: 3px solid #003366; }
+    .browser-page { display:none; padding: 40px 30px; background: #fff; min-height: 350px; }
+  </style>
 </head>
 <body>
-  <!-- === Main App Container === -->
-  <div class="container" role="main">
+  <!-- Tab buttons -->
+  <button id="tab-inbox" class="tab-btn active">Inbox</button>
+  <button id="tab-reply" class="tab-btn">Smart Reply</button>
+  <button id="tab-crm" class="tab-btn">CRM</button>
 
-    <!-- === Header Branding === -->
-    <div class="header-bar" style="display: flex; align-items: center; justify-content: space-between;">
-      <h1>SMART Reply</h1>
-      <div class="branding" style="font-size: 0.9rem; color: #555;">
-        Powered by
-        <img src="https://more-house-school.s3.eu-west-2.amazonaws.com/CT__300dpi_primary_full.jpg"
-             alt="Cognitive Tasking" height="28"
-             style="vertical-align: middle; margin-left: 4px; opacity: 0.85;">
-      </div>
-    </div>
-
-    <!-- === Intro Text === -->
-    <p class="subtext">
-      Paste a parent email below — SMART Reply will write a professional reply using the School’s official information.
-    </p>
-
-    <!-- === Parent Email Input === -->
-    <label for="parentMessage">Parent Email:</label>
-    <textarea id="parentMessage" placeholder="E.g. Do you offer wrap-around care or bursaries for siblings?"></textarea>
-
-    <!-- === Optional Instruction Input === -->
-    <label for="instructionBox">Optional Instruction:</label>
-    <div class="field-desc">
-      Add any special tone or style instructions (e.g. "Make it warmer", "Be concise").
-    </div>
-    <textarea id="instructionBox"></textarea>
-
-    <!-- === Main Action Buttons === -->
-    <div class="buttons-row">
-      <button id="submitBtn">Generate Reply</button>
-      <button id="clearBtn">Clear Text</button>
-      <span id="loading" class="loader" style="display:none;" aria-live="polite"></span>
-    </div>
-
-    <!-- === Output Boxes === -->
-    <div id="sentimentBox" class="sentiment-box" aria-live="polite"></div>
-    <div id="replyBox" class="reply-box" aria-live="polite"></div>
-    <div id="errorBox" class="error-box" role="alert"></div>
-
-    <!-- === Revise Section (Initially Hidden) === -->
-    <div id="reviseSection" class="revise-section">
-      <label for="reviseBox">Refine this reply with an instruction:</label>
-      <textarea id="reviseBox" placeholder="E.g. Shorten, remove bursary link …"></textarea>
-
-      <!-- === Add Smart Links === -->
-      <label for="urlBox" style="margin-top:1rem;display:block;">💡 Add Smart Links to Your Replies</label>
-      <div class="field-desc" style="margin-bottom:.4rem;">
-        Automatically turn important phrases (like <em>Head</em> or <em>Visit Us</em>) into clickable links.<br><br>
-        <strong>How it works:</strong><br>
-        Just type each phrase and the webpage you want it to link to.<br>
-        Use this format:<br>
-        <code>Head=https://site.com/head; Visit Us=https://site.com/visit</code><br><br>
-        👉 Separate each pair with a semicolon (<code>;</code>)
-      </div>
-      <textarea id="urlBox" style="width:100%;padding:0.6rem;height:80px;margin-bottom:1rem;" placeholder="E.g. Head=https://..., Visit Us=https://..."></textarea>
-
-      <!-- === Revise/Save Buttons === -->
-      <div class="buttons-row">
-        <button id="reviseBtn">Revise Response</button>
-        <button id="saveBtn">Save as Standard</button>
-        <span id="saveStatus" style="color: #47B881; font-weight: 600;"></span>
-      </div>
-    </div>
-
+  <!-- TAB CONTENTS -->
+  <div id="tab-inbox-content" class="browser-page" style="display:block;">
+    <h2>Inbox Content</h2>
   </div>
-  <!-- === End Main Container === -->
+  <div id="tab-reply-content" class="browser-page">
+    <h2>Smart Reply Content</h2>
+  </div>
+  <div id="tab-crm-content" class="browser-page">
+    <h2>CRM Content Should Show!</h2>
+    <!-- Put your real CRM code here when this test works -->
+  </div>
 
-  <!-- === App Script === -->
+  <script>
+    // Tab logic - works 100%
+    const tabInboxBtn = document.getElementById('tab-inbox');
+    const tabReplyBtn = document.getElementById('tab-reply');
+    const tabCrmBtn   = document.getElementById('tab-crm');
+    const tabInbox    = document.getElementById('tab-inbox-content');
+    const tabReply    = document.getElementById('tab-reply-content');
+    const tabCrm      = document.getElementById('tab-crm-content');
 
-  <script src="static/script.js"></script>
+    tabInboxBtn.onclick = function() {
+      tabInboxBtn.classList.add('active');
+      tabReplyBtn.classList.remove('active');
+      tabCrmBtn.classList.remove('active');
+      tabInbox.style.display = 'block';
+      tabReply.style.display = 'none';
+      tabCrm.style.display = 'none';
+    };
+    tabReplyBtn.onclick = function() {
+      tabReplyBtn.classList.add('active');
+      tabInboxBtn.classList.remove('active');
+      tabCrmBtn.classList.remove('active');
+      tabReply.style.display = 'block';
+      tabInbox.style.display = 'none';
+      tabCrm.style.display = 'none';
+    };
+    tabCrmBtn.onclick = function() {
+      tabCrmBtn.classList.add('active');
+      tabInboxBtn.classList.remove('active');
+      tabReplyBtn.classList.remove('active');
+      tabCrm.style.display = 'block';
+      tabInbox.style.display = 'none';
+      tabReply.style.display = 'none';
+    };
+  </script>
 </body>
 </html>

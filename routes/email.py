@@ -5,10 +5,7 @@ from datetime import datetime
 from models import Session, Email
 import os
 from dotenv import load_dotenv
-from utils.email_sync import fetch_and_upsert_emails
 
-
-# Load environment variables from .env file
 load_dotenv()
 
 email_bp = Blueprint('email_bp', __name__)
@@ -57,6 +54,7 @@ def get_email(email_id):
             "id": email.id,
             "subject": email.subject,
             "from_address": email.from_address,
+            "to_address": email.to_address,
             "body": email.body,
             "status": email.status,
             "date_received": email.date_received.isoformat() if email.date_received else None,
@@ -82,6 +80,7 @@ def get_inbox():
             "id": email.id,
             "subject": email.subject,
             "from_address": email.from_address,
+            "to_address": email.to_address,
             "body": email.body,
             "date_received": email.date_received.isoformat() if email.date_received else None,
             "status": email.status
@@ -94,20 +93,5 @@ def get_inbox():
 
 @email_bp.route("/sync-emails", methods=["POST"])
 def sync_emails():
-    """Manually fetch latest emails from IMAP and insert into DB."""
-    try:
-        data = request.get_json() or {}
-        customer_id = data.get("customer_id", "LOCAL-TEST")
-        imap_host = os.getenv("IMAP_SERVER")
-        imap_port = int(os.getenv("IMAP_PORT", "993"))
-        imap_user = os.getenv("EMAIL_ACCOUNT")
-        imap_pass = os.getenv("EMAIL_PASSWORD")
-
-        if not all([imap_host, imap_user, imap_pass]):
-            return jsonify({"success": False, "error": "Missing IMAP configuration"}), 500
-
-        fetch_and_upsert_emails(customer_id, imap_host, imap_user, imap_pass)
-        return jsonify({"success": True})
-    except Exception as e:
-        print(f"❌ SYNC EMAILS ERROR: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+    """Placeholder for IMAP sync endpoint (use fetcher script directly in production)."""
+    return jsonify({"success": False, "error": "IMAP sync must be run as a standalone script using PostgreSQL."}), 400

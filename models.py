@@ -3,6 +3,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import datetime
+import os
+from dotenv import load_dotenv
+
+# Load .env for DATABASE_URL
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL or not DATABASE_URL.startswith("postgresql"):
+    raise RuntimeError("DATABASE_URL must be set to a PostgreSQL connection string!")
 
 Base = declarative_base()
 
@@ -13,6 +22,7 @@ class Parent(Base):
     email = Column(String, nullable=False, unique=True, index=True)
     phone = Column(String, nullable=True)
     account_number = Column(String, unique=True, nullable=True, index=True)
+    customer_id = Column(String, nullable=True, index=True)  # <-- Added
     children = relationship("Child", back_populates="parent")
     enquiries = relationship("Enquiry", back_populates="parent")
 
@@ -25,6 +35,7 @@ class Child(Base):
     year_group = Column(String, nullable=True)
     interests = Column(Text, nullable=True)
     account_number = Column(String, unique=True, nullable=True, index=True)
+    customer_id = Column(String, nullable=True, index=True)  # <-- Added
     parent = relationship("Parent", back_populates="children")
     enquiries = relationship("Enquiry", back_populates="child")
 
@@ -46,6 +57,7 @@ class Enquiry(Base):
     source = Column(String, nullable=True)
     raw_text = Column(Text, nullable=True)
     pipeline_stage_id = Column(Integer, ForeignKey("pipeline_stages.id"), nullable=True)
+    customer_id = Column(String, nullable=True, index=True)  # <-- Added
 
     parent = relationship("Parent", back_populates="enquiries")
     child = relationship("Child", back_populates="enquiries")
@@ -68,7 +80,7 @@ class Email(Base):
     processed_by = Column(String, nullable=True)
     processed_at = Column(DateTime, nullable=True)
     direction = Column(String, nullable=True)
-    customer_id = Column(String, nullable=True, default="LOCAL-TEST", index=True)  # ✅ Add this line
+    customer_id = Column(String, nullable=True, default="LOCAL-TEST", index=True)
 
     def dismiss(self, user_id=None):
         self.status = 'dismissed'
@@ -79,30 +91,24 @@ class Email(Base):
     def __repr__(self):
         return f"<Email(id={self.id}, subject='{self.subject}', status='{self.status}')>"
 
-
-# === Database Migration Helper ===
+# === Database Migration Helper (OPTIONAL) ===
 def migrate_db(engine):
     """Perform any necessary database migrations"""
-    from sqlalchemy import inspect
-    
+    from sqlalchemy import inspect, text
     inspector = inspect(engine)
-    
-    # Get existing columns in emails table
     existing_columns = {col['name'] for col in inspector.get_columns('emails')}
-    
-    # Add any missing columns using raw SQL
     with engine.connect() as conn:
         if 'status' not in existing_columns:
             conn.execute(text("ALTER TABLE emails ADD COLUMN status VARCHAR DEFAULT 'unprocessed'"))
         conn.commit()
 
 # === INIT DB ===
-def init_db(db_url="sqlite:///smart_reply.db"):
+def init_db(db_url=DATABASE_URL):
     """Initialize database with proper error handling"""
     try:
         engine = create_engine(db_url)
         Base.metadata.create_all(engine)
-        migrate_db(engine)  # Run migrations
+        migrate_db(engine)  # Run migrations if needed
         return sessionmaker(bind=engine)
     except Exception as e:
         print(f"❌ Database initialization error: {str(e)}")
@@ -110,7 +116,7 @@ def init_db(db_url="sqlite:///smart_reply.db"):
 
 # Create Session class
 try:
-    engine = create_engine("sqlite:///smart_reply.db")
+    engine = create_engine(DATABASE_URL)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
 except Exception as e:

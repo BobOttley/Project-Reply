@@ -9,9 +9,8 @@ from routes.reply import reply_bp
 from routes.revise import revise_bp
 from routes.save_standard import save_standard_bp
 from routes.email import email_bp
-from routes.reply_email import reply_email_bp
 from routes.reply_form import reply_form_bp
-
+from routes.accounts import accounts_bp
 
 # === Flask App Initialisation ===
 app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -22,8 +21,8 @@ app.register_blueprint(reply_bp)
 app.register_blueprint(revise_bp)
 app.register_blueprint(save_standard_bp)
 app.register_blueprint(email_bp)
-app.register_blueprint(reply_email_bp)
 app.register_blueprint(reply_form_bp)
+app.register_blueprint(accounts_bp)
 
 # === Serve Frontend (index.html) ===
 @app.route("/")
