@@ -1,19 +1,34 @@
+print("🚦 Email fetcher script started - very first line")
+
 import psycopg2
+print("✅ Imported psycopg2")
 from psycopg2.extras import DictCursor
+print("✅ Imported DictCursor")
 import imaplib
+print("✅ Imported imaplib")
 import email
+print("✅ Imported email module")
 from email.header import decode_header
+print("✅ Imported decode_header")
 from email.utils import parsedate_to_datetime
+print("✅ Imported parsedate_to_datetime")
 from dotenv import load_dotenv
+print("✅ Imported load_dotenv")
 import os
+print("✅ Imported os")
 import time
+print("✅ Imported time")
 
 # Load environment variables
 load_dotenv()
+print("✅ Loaded .env")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+print("🔑 DATABASE_URL:", DATABASE_URL)
 CUSTOMER_ID = os.getenv("CUSTOMER_ID")
+print("🔑 CUSTOMER_ID:", CUSTOMER_ID)
 POLL_INTERVAL = int(os.getenv("EMAIL_POLL_INTERVAL", "60"))  # seconds
+print("🔑 POLL_INTERVAL:", POLL_INTERVAL)
 
 def clean_header(header):
     if header is None:
@@ -28,15 +43,21 @@ def fetch_and_store_emails_for_user(account):
     imap_server = account["imap_server"]
     imap_port = int(account["imap_port"])
 
+    print(f"🔄 [FETCH] Starting fetch for {CUSTOMER_ID}/{user_id} ({email_account})")
+
     conn = None
     cursor = None
     mail = None
     try:
+        print("🔗 Connecting to Postgres…")
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor(cursor_factory=DictCursor)
+        print("✅ Connected to DB")
 
+        print(f"🔗 Connecting to IMAP: {imap_server}:{imap_port}")
         mail = imaplib.IMAP4_SSL(imap_server, imap_port)
         mail.login(email_account, email_password)
+        print("✅ Logged in to IMAP")
         mail.select("inbox")
 
         status, messages = mail.search(None, "ALL")
@@ -58,6 +79,7 @@ def fetch_and_store_emails_for_user(account):
 
             unique_id = msg.get("Message-ID")
             if not unique_id:
+                print(f"⚠️ Skipping email without Message-ID for {CUSTOMER_ID}/{user_id}")
                 continue  # skip broken emails
 
             cursor.execute(
@@ -65,6 +87,7 @@ def fetch_and_store_emails_for_user(account):
                 (CUSTOMER_ID, user_id, unique_id)
             )
             if cursor.fetchone():
+                print(f"⚠️ Email {unique_id} already stored for {CUSTOMER_ID}/{user_id}")
                 continue  # already stored
 
             subject = clean_header(msg.get("Subject"))
@@ -96,7 +119,9 @@ def fetch_and_store_emails_for_user(account):
             print(f"✅ Saved for {CUSTOMER_ID}/{user_id}: {subject} from {from_address}")
 
         conn.commit()
+        print(f"💾 Commit complete for {CUSTOMER_ID}/{user_id}")
         mail.logout()
+        print(f"📤 Logged out IMAP for {CUSTOMER_ID}/{user_id}")
     except Exception as e:
         print(f"❌ Error for {CUSTOMER_ID}/{user_id}: {e}")
         if conn:
@@ -113,6 +138,7 @@ def fetch_and_store_emails_for_user(account):
                 pass
 
 def get_active_user_accounts_for_customer(customer_id):
+    print(f"🔍 Fetching active user accounts for customer {customer_id}")
     conn = None
     cursor = None
     try:
@@ -124,6 +150,7 @@ def get_active_user_accounts_for_customer(customer_id):
             WHERE active = TRUE AND customer_id = %s
         """, (customer_id,))
         accounts = cursor.fetchall()
+        print(f"🔍 Found {len(accounts)} account(s) for {customer_id}")
         return [dict(row) for row in accounts]
     except Exception as e:
         print(f"❌ Error fetching user accounts for customer {customer_id}: {e}")
@@ -135,12 +162,12 @@ def get_active_user_accounts_for_customer(customer_id):
             conn.close()
 
 if __name__ == "__main__":
-    print(f"Starting email fetcher worker for customer_id={CUSTOMER_ID} (poll interval: {POLL_INTERVAL} seconds)")
+    print(f"🚦 Starting email fetcher worker for customer_id={CUSTOMER_ID} (poll interval: {POLL_INTERVAL} seconds)")
     while True:
         accounts = get_active_user_accounts_for_customer(CUSTOMER_ID)
         if not accounts:
             print("⚠️ No active user accounts found. Sleeping...")
         for account in accounts:
             fetch_and_store_emails_for_user(account)
-        print(f"Sleeping for {POLL_INTERVAL} seconds...\n")
+        print(f"😴 Sleeping for {POLL_INTERVAL} seconds...\n")
         time.sleep(POLL_INTERVAL)
