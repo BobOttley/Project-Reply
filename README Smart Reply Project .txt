@@ -1,140 +1,114 @@
-Smart Reply
-Smart Reply is a modular, multi-tenant AI-powered admissions assistant for independent schools. It automates parent email replies, manages CRM data, integrates with your inbox, and enables personalised, professional communication—all through a fast, modern web UI.
+Smart Reply – Project Overview (As of July 2025)
+What is Smart Reply?
+Smart Reply is a modular, multi-tenant AI-powered admissions assistant for independent schools. It automates parent email replies, manages CRM data, integrates with school inboxes, and delivers warm, professional communications—all via a modern web interface.
 
-🚀 Features
-AI-Powered Replies – Generates warm, professional parent replies using OpenAI GPT models.
+Key Features
+AI-Powered Replies: GPT-based generation of human-sounding, helpful, and on-brand email responses to parent queries.
 
-Entity Extraction – Parses emails and forms for parent/child names, interests, year group, etc.
+Entity Extraction: Automatically pulls names, children, interests, year groups, etc., from emails and forms.
 
-Inbox Sync – Connects to IMAP or AWS WorkMail to import and manage live emails.
+Inbox Sync: Connects to IMAP/AWS WorkMail, imports and manages live emails.
 
-Sentiment Scoring – Classifies tone and sentiment to guide more human replies.
+Sentiment Scoring: Analyses tone/sentiment to guide reply strategy and track trends.
 
-Static & AI Replies – Uses pre-approved standard replies or GPT-generated fallback responses.
+Static & AI Replies: Combines standard (pre-approved) replies with AI fallbacks.
 
-Revision Flow – Enables edits, refinements, CTA suggestions, and final review before sending.
+Revision Flow: Lets staff refine replies, insert CTAs, edit, and save templates for future matching.
 
-Smart Save – Allows saving refined replies to improve future matches.
+Smart Save: “Learns” from edits—saving high-quality replies to improve future matches.
 
-Multi-Tenant – Seamlessly handles multiple schools or groups via customer-specific configs.
+Multi-Tenant: Manages multiple schools/groups with isolated configs, data, and knowledge.
 
-Modular Architecture – Easy to extend with CRM, events, analytics, dashboards, etc.
+Modular Architecture: Extensible with CRM, events, analytics, dashboards, WhatsApp, and more.
 
-🧠 Tech Stack
-Backend: Python 3.11+, Flask, SQLAlchemy, SQLite (or Postgres)
+Technical Stack
+Backend: Python 3.11+, Flask, SQLAlchemy, SQLite or PostgreSQL
 
-AI Models: OpenAI GPT (gpt-4o-mini), text-embedding-3-small
+AI Models: OpenAI GPT-4o/4o-mini, text-embedding-3-small
 
-Frontend: HTML, CSS, JS (modular Smart Reply UI)
+Frontend: HTML, CSS, JavaScript (custom modular UI)
 
-Storage: Local filesystem (embeddings, configs) + SQL DB (email, CRM)
+Storage: Local filesystem for embeddings/configs; SQL DB for email/CRM; S3 for production storage
 
-Email Sync: IMAP or AWS WorkMail (via imap-tools)
+Email Sync: IMAP or AWS WorkMail (using imap-tools)
 
-Deployment: GitHub + Render
+Deployment: GitHub + Render (with PostgreSQL, Gunicorn, env vars set via dashboard)
 
-📁 Project Structure
+Multi-Tenancy: Everything (email, CRM, KB) tied to customer_id and (if enabled) user_id
+
+Project Structure
 bash
 Copy
 Edit
 project_root/
-├── app.py                         # Main Flask entrypoint
-├── config.py                      # OpenAI + environment config
-├── models.py                      # SQLAlchemy models
-├── requirements.txt               # All pip dependencies
-├── runtime.txt                    # Python version for Render
-├── .env                           # Local environment variables
+├── app.py                      # Main Flask entrypoint
+├── config.py                   # OpenAI/environment config
+├── models.py                   # SQLAlchemy models
+├── requirements.txt            # Pip dependencies
+├── runtime.txt                 # Python version for Render
+├── .env                        # Local env variables (not committed)
 │
-├── routes/                        # Flask route handlers
-│   ├── reply.py                   # Reply generation logic
-│   ├── revise.py                  # Revision workflow
-│   ├── save_standard.py           # Save/edit static responses
-│   └── email.py                   # Email sync & inbox
+├── routes/                     # Flask route modules
+│   ├── reply.py                # Reply generation
+│   ├── revise.py               # Revision workflow
+│   ├── save_standard.py        # Save/edit static responses
+│   └── email.py                # Email sync & inbox
 │
-├── utils/                         # Utility logic
-│   ├── helpers.py                 # Similarity, link insertions, etc.
-│   ├── entity_extraction.py       # GPT entity extraction
-│   ├── config_loader.py           # Load school configs
-│   ├── crm_upsert.py              # CRM dedupe/save
-│   └── email_sync.py              # Fetch live emails from inbox
+├── utils/                      # Utilities
+│   ├── helpers.py              # Similarity, link insertions, etc.
+│   ├── entity_extraction.py    # GPT entity extraction
+│   ├── config_loader.py        # Load configs
+│   ├── crm_upsert.py           # CRM dedupe/save
+│   └── email_sync.py           # Fetch emails from inbox
 │
 ├── templates/
-│   └── index.html                 # Full Smart Reply interface
+│   └── index.html              # Full Smart Reply UI
 │
 ├── static/
-│   ├── styles.css                 # Frontend styling
-│   └── script.js                  # All JS logic (inbox + Smart Reply)
+│   ├── styles.css              # Frontend CSS
+│   └── script.js               # All JS logic (inbox + Smart Reply)
 │
 ├── kb/
 │   └── <customer_id>/embeddings/  # Embeddings, metadata, PDFs
 │
 ├── config/
 │   ├── extraction_config_<id>.json  # Per-customer extraction logic
-│   └── school_config_<id>.json      # Branding + tone for each school
+│   └── school_config_<id>.json      # Branding + tone per school
 │
-├── standard_responses.json        # Approved responses (static matching)
-└── README.md                      # This file
-⚙️ Setup Instructions
-1. Clone the repo
-bash
-Copy
-Edit
-git clone https://github.com/BobOttley/SMART_REPLY_UK.git
-cd SMART_REPLY_UK
-2. Create a virtual environment
-bash
-Copy
-Edit
-python3 -m venv venv
-source venv/bin/activate
-3. Install Python dependencies
-bash
-Copy
-Edit
+├── standard_responses.json     # Approved static responses
+├── .gitignore                 # Ignore db, env, pyc, etc.
+└── README.md
+Setup/Usage
+Clone repo:
+git clone https://github.com/BobOttley/SMART_REPLY_UK.git && cd SMART_REPLY_UK
+
+Create venv:
+python3 -m venv venv && source venv/bin/activate
+
+Install dependencies:
 pip install -r requirements.txt
-4. Create .env file
-ini
-Copy
-Edit
-OPENAI_API_KEY=your_openai_key
-EMAIL_ACCOUNT=your_email@example.com
-EMAIL_PASSWORD=your_password
-IMAP_SERVER=imap.mail.us-east-1.awsapps.com
-IMAP_PORT=993
-CUSTOMER_ID=LOCAL-TEST
-5. Run migration (adds status column to emails table if needed)
-bash
-Copy
-Edit
+
+Add .env:
+Set OpenAI key, email creds, IMAP server/port, CUSTOMER_ID
+
+Run migration:
 python utils/migrate.py
-6. Fetch emails
-bash
-Copy
-Edit
+
+Fetch emails:
 python utils/email_sync.py
-7. Start the Flask server
-bash
-Copy
-Edit
-flask run
-🌐 Deploying to Render
-Required Files:
-requirements.txt
 
-runtime.txt (should contain python-3.11)
+Start Flask server:
+flask run (or gunicorn app:app on Render)
 
-.env (set in Render dashboard, not committed)
+Render Deployment Tips
+Ensure requirements.txt includes gunicorn==21.2.0
 
-Untracked database: add to .gitignore:
+runtime.txt must contain python-3.11
 
-bash
-Copy
-Edit
-smart_reply.db
-*.pyc
-__pycache__/
-.env
-Add these to .gitignore if not already present:
+Set .env variables in Render dashboard (never commit secrets!)
+
+Ignore these in Git:
+
 bash
 Copy
 Edit
@@ -143,46 +117,66 @@ kb/
 .env
 *.pkl
 __pycache__/
-🧪 Usage
-Inbox Panel: View, open, dismiss parent emails.
+Extending / Customising
+Entity tags:
+Add in config/extraction_config_<id>.json
 
-Reply Panel: Paste emails or form data to generate replies.
+Branding/tone:
+Set in config/school_config_<id>.json
 
-Revise: Apply tweaks and save updated reply templates.
+CTAs & templates:
+Extend standard_responses.json
 
-Multi-Customer: Just change the CUSTOMER_ID and associated config files.
+Modules:
+Plug in events, analytics, dashboards, WhatsApp, etc.
 
-🔧 Extending
-Add new entity tags via config/extraction_config_<id>.json
+Recent Upgrades
+Full Multi-Tenancy:
+All routes, data, and logic are customer-aware (customer_id/user_id)
 
-Refine school branding/tone in school_config_<id>.json
+PostgreSQL Support:
+Render uses Postgres instead of SQLite; all DB logic supports both
 
-Add custom CTAs or template variants to standard_responses.json
+Worker for Email Sync:
+Background worker fetches emails on Render; not tied to Flask server thread
 
-Attach event modules, CRMs, dashboards, or WhatsApp integrations
+Modular Flask Routing:
+Each module (reply, revise, save, email) is a standalone route file
 
-🛠 Deployment Fixes
-If Render gives gunicorn: command not found:
+Modern UI:
+All features in one tabbed interface: Inbox, Reply, CRM, Settings (admin)
 
-Make sure this is in requirements.txt:
+CRM Integration:
+Parent-student data stored, searched, and linked to emails; new accounts created on reply
 
-ini
-Copy
-Edit
-gunicorn==21.2.0
-Add a runtime.txt with:
+Advanced Search & Dedupe:
+Search CRM by name/email/child; no duplicate accounts
 
-Copy
-Edit
-python-3.11
-🤝 Contributing
-Bug reports, feature requests, and improvements welcome.
-Please open a GitHub issue or pull request.
+Editable Standard Replies:
+Save, edit, and match static templates with Markdown links
 
-📬 Contact
-For questions or onboarding support, email:
-support@penai.co.uk
+Sentiment Tracking:
+All replies show sentiment 1–10 and an explanation
 
-Last updated: 18 July 2025
-Maintained by Bob Ottley
+Revision & CTA Flow:
+Add CTAs, refine replies, insert hyperlinks using selection tool
 
+Admin Routing Rules:
+Staff manage notification/email routing from the web UI (rules editable via modal)
+
+Customer-aware S3 Storage:
+All knowledge base files go to kb/<customer_id>/embeddings/ (local or S3)
+
+New Scraper:
+Scrapes school sites/PDFs, chunks, builds metadata, and generates everything for embedding
+
+Inbox Preview & Junk Filtering:
+Shows email subject/snippet, with "Dismiss" to ignore junk (no reply generated)
+
+How to Contribute / Get Help
+Open a GitHub issue or pull request for bugs or features
+
+Email support: support@penai.co.uk
+
+Last updated: 20 July 2025
+Maintained by: Robert Ottley, PEN.ai

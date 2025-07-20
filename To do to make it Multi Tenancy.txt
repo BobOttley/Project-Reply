@@ -1,0 +1,188 @@
+Smart Reply Multi-Tenancy Upgrade & SaaS Readiness Document
+For Deployment Across 100+ Schools
+
+1. Current State (as of July 2025)
+Smart Reply is a modern, modular admissions reply, CRM, and parent communications system. It is designed with multi-tenancy in mind:
+
+All major models (Parent, Child, Email, Enquiry) have a customer_id field.
+
+Utilities (entity extraction, upserts, config loading) support per-customer data.
+
+File structure for configs and KB supports per-customer folders.
+
+Email fetching and storing supports customer_id and user_id.
+
+BUT:
+
+The frontend (JS, HTML) is still hardcoded or missing dynamic customer handling.
+
+Many API endpoints do not require or filter by customer_id.
+
+Some files (static responses, configs) are not stored per-customer.
+
+There is no frontend selector, session, or login system to manage the active customer context.
+
+Data isolation is not enforced at every layer.
+
+2. What’s Missing for SaaS/True Multi-Tenancy
+Area	Current State	Action Needed
+Frontend/API Calls	Hardcoded or missing customer_id	Make customer_id dynamic
+Backend API	Does not always require/check customer_id	Enforce and validate
+DB Queries	Not always filtered by customer_id	Always filter
+Config/KB/Files	Often stored as shared/global	Use per-customer files
+Static Responses	Shared JSON	Per-customer JSON
+Email Sync Scripts	Single-customer only	Loop/process all customers
+Security	No auth, users can spoof customer_id	Add user-auth & check
+Frontend UI	No customer selection	Add selector/session/login
+
+3. Requirements for a 100+ School SaaS Platform
+a) UI & Session Management
+Add a customer selector to the UI (dropdown in header) or implement a proper login system.
+
+Track the selected/active customer_id in JS/session.
+
+All API requests (GET/POST/DELETE) must include customer_id.
+
+b) API / Backend
+All Flask endpoints must extract customer_id from the request (args, body, or session).
+
+Every data query (fetch, update, delete) must filter by customer_id.
+
+Any entity (Parent, Child, Email, Enquiry, etc.) must be operated on with both the object ID and the customer_id.
+
+Return error 400/403 if the request is missing or is not authorised for that customer_id.
+
+c) File, Config, and Knowledge Base Handling
+All per-customer config, embedding, and static response files must be stored with the pattern:
+
+php-template
+Copy
+Edit
+kb/<customer_id>/embeddings/metadata.pkl
+config/extraction_config_<customer_id>.json
+standard_responses_<customer_id>.json
+When loading or saving, always use the active/requested customer_id in the path.
+
+d) Static Replies and CRM Data
+Standard replies must be per-customer (no global standard_responses.json).
+
+All CRM/search/add/update must use customer_id for both queries and inserts.
+
+e) Email Processing/Synchronisation
+Email fetchers, background workers, and inbox views must process/store per-customer:
+
+Either run one worker per customer OR loop over all accounts in a master script.
+
+Always store emails with correct customer_id and user_id.
+
+f) Security and Auth
+Do not trust just any request’s customer_id.
+
+Implement a login/auth system so only users for a given school can access their data.
+
+Store allowed customer_id in user session or JWT.
+
+Double-check that all backend logic enforces this mapping.
+
+g) Testing and Verification
+Test all flows (search, reply, CRM, email) as two+ different customers in parallel.
+
+Ensure full data isolation (no cross-tenant leakage).
+
+Add unit/integration tests to cover tenant boundaries.
+
+h) Documentation & Onboarding
+Update your onboarding docs:
+
+How to add a new school (set up selector/login, config files, data folders).
+
+How customer_id is chosen (selector, login, subdomain).
+
+How configs and standard responses are managed per school.
+
+Update deployment scripts to remove global CUSTOMER_ID in favour of dynamic logic.
+
+4. Sample Changes & Code Snippets
+Frontend Selector Example
+html
+Copy
+Edit
+<select id="customerSelector">
+  <option value="cheltenham_college">Cheltenham College</option>
+  <option value="bassetts_house">Bassett House</option>
+  <!-- ... -->
+</select>
+js
+Copy
+Edit
+let customerId = "cheltenham_college";
+const selector = document.getElementById('customerSelector');
+if (selector) {
+  customerId = selector.value;
+  selector.onchange = function() {
+    customerId = selector.value;
+    loadInbox();
+  };
+}
+All fetches:
+
+js
+Copy
+Edit
+fetch(`/inbox?customer_id=${customerId}`)
+fetch(`/api/accounts/search?q=${query}&customer_id=${customerId}`)
+fetch('/api/accounts', { ..., body: JSON.stringify({ ...data, customer_id: customerId }) })
+Backend (Flask) Endpoint Example
+python
+Copy
+Edit
+@app.route("/api/accounts/search")
+def search_accounts():
+    customer_id = request.args.get("customer_id")
+    if not customer_id:
+        return jsonify({"error": "Missing customer_id"}), 400
+    # Only fetch accounts for that customer
+    results = db.query(Account).filter_by(customer_id=customer_id, ...)
+Do this everywhere!
+
+File Save/Load Example
+python
+Copy
+Edit
+def load_standard_responses(customer_id):
+    path = f"standard_responses_{customer_id}.json"
+    with open(path, "r") as f:
+        return json.load(f)
+5. Critical Do’s and Don’ts
+Do	Don’t
+Pass customer_id on every API call	Hardcode or omit customer_id anywhere
+Filter EVERY DB query by customer_id	Query by id only
+Store config/files/KB per-customer	Use global configs/static files
+Add a frontend selector or session	Assume just one school per instance
+Secure backend—don’t trust API caller’s customer_id	Allow anyone to spoof customer_id
+Add cross-tenant isolation tests	Assume it “just works”
+
+6. What Success Looks Like
+Each school sees only their own inbox, CRM, templates, and emails.
+
+New school onboarding: just add a folder, config, dropdown value, and email account—no code change.
+
+No risk of data leakage or cross-tenant update/deletion.
+
+Easy to add/scale to 10, 100, 500+ schools.
+
+7. Rollout Steps
+Refactor frontend: Add customer selector/session, update all fetches.
+
+Refactor backend: Require and enforce customer_id everywhere.
+
+Refactor file/config logic: always use per-customer paths.
+
+Update email sync/worker logic for all customers.
+
+Implement user authentication and enforce per-customer access (if not already).
+
+Test with multiple customers in parallel—fix any boundary failures.
+
+Update docs/onboarding for new schools.
+

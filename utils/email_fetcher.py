@@ -6,14 +6,14 @@ from email.header import decode_header
 from email.utils import parsedate_to_datetime
 from dotenv import load_dotenv
 import os
+import time
 
+# Load environment variables
 load_dotenv()
 
-EMAIL_ACCOUNT = os.getenv("EMAIL_ACCOUNT")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-IMAP_SERVER = os.getenv("IMAP_SERVER")
-IMAP_PORT = int(os.getenv("IMAP_PORT", "993"))
 DATABASE_URL = os.getenv("DATABASE_URL")
+CUSTOMER_ID = os.getenv("CUSTOMER_ID")
+POLL_INTERVAL = int(os.getenv("EMAIL_POLL_INTERVAL", "60"))  # seconds
 
 def clean_header(header):
     if header is None:
@@ -21,26 +21,38 @@ def clean_header(header):
     decoded, encoding = decode_header(header)[0]
     return decoded.decode(encoding or "utf-8") if isinstance(decoded, bytes) else decoded
 
-def fetch_and_store_emails(customer_id):
-    if not customer_id:
-        print("❌ customer_id is required.")
-        return
+def fetch_and_store_emails_for_user(account):
+    user_id = account["user_id"]
+    email_account = account["email_account"]
+    email_password = account["email_password"]
+    imap_server = account["imap_server"]
+    imap_port = int(account["imap_port"])
 
+    conn = None
+    cursor = None
+    mail = None
     try:
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor(cursor_factory=DictCursor)
 
-        mail = imaplib.IMAP4_SSL(IMAP_SERVER, IMAP_PORT)
-        mail.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
+        mail = imaplib.IMAP4_SSL(imap_server, imap_port)
+        mail.login(email_account, email_password)
         mail.select("inbox")
 
         status, messages = mail.search(None, "ALL")
-        email_ids = messages[0].split()
+        if status != "OK":
+            print(f"❌ IMAP search failed for {CUSTOMER_ID}/{user_id} with status: {status}")
+            return
 
-        print(f"📥 Fetching {len(email_ids)} emails for customer_id={customer_id}...")
+        email_ids = messages[0].split()
+        print(f"📥 Fetching {len(email_ids)} emails for customer_id={CUSTOMER_ID}, user_id={user_id}")
 
         for eid in email_ids:
             res, msg_data = mail.fetch(eid, "(RFC822)")
+            if res != "OK":
+                print(f"❌ Failed to fetch email id {eid} for {CUSTOMER_ID}/{user_id}")
+                continue
+
             raw_email = msg_data[0][1]
             msg = email.message_from_bytes(raw_email)
 
@@ -49,8 +61,8 @@ def fetch_and_store_emails(customer_id):
                 continue  # skip broken emails
 
             cursor.execute(
-                "SELECT 1 FROM emails WHERE customer_id=%s AND unique_id=%s",
-                (customer_id, unique_id)
+                "SELECT 1 FROM emails WHERE customer_id=%s AND user_id=%s AND unique_id=%s",
+                (CUSTOMER_ID, user_id, unique_id)
             )
             if cursor.fetchone():
                 continue  # already stored
@@ -72,21 +84,21 @@ def fetch_and_store_emails(customer_id):
 
             cursor.execute("""
                 INSERT INTO emails (
-                    unique_id, customer_id, subject, from_address, to_address,
+                    unique_id, customer_id, user_id, subject, from_address, to_address,
                     body, status, date_received
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
-                unique_id, customer_id, subject, from_address, to_address,
+                unique_id, CUSTOMER_ID, user_id, subject, from_address, to_address,
                 body, 'unprocessed', date_received
             ))
 
-            print(f"✅ Saved for {customer_id}: {subject} from {from_address}")
+            print(f"✅ Saved for {CUSTOMER_ID}/{user_id}: {subject} from {from_address}")
 
         conn.commit()
         mail.logout()
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error for {CUSTOMER_ID}/{user_id}: {e}")
         if conn:
             conn.rollback()
     finally:
@@ -94,7 +106,41 @@ def fetch_and_store_emails(customer_id):
             cursor.close()
         if conn:
             conn.close()
+        if mail:
+            try:
+                mail.logout()
+            except Exception:
+                pass
+
+def get_active_user_accounts_for_customer(customer_id):
+    conn = None
+    cursor = None
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor(cursor_factory=DictCursor)
+        cursor.execute("""
+            SELECT user_id, email_account, email_password, imap_server, imap_port
+            FROM accounts
+            WHERE active = TRUE AND customer_id = %s
+        """, (customer_id,))
+        accounts = cursor.fetchall()
+        return [dict(row) for row in accounts]
+    except Exception as e:
+        print(f"❌ Error fetching user accounts for customer {customer_id}: {e}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
-    # Use your real customer_id value or keep as 'LOCAL-TEST'
-    fetch_and_store_emails(customer_id="LOCAL-TEST")
+    print(f"Starting email fetcher worker for customer_id={CUSTOMER_ID} (poll interval: {POLL_INTERVAL} seconds)")
+    while True:
+        accounts = get_active_user_accounts_for_customer(CUSTOMER_ID)
+        if not accounts:
+            print("⚠️ No active user accounts found. Sleeping...")
+        for account in accounts:
+            fetch_and_store_emails_for_user(account)
+        print(f"Sleeping for {POLL_INTERVAL} seconds...\n")
+        time.sleep(POLL_INTERVAL)
